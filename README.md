@@ -9,3 +9,5 @@ Most (naive) trading strategies simplify their algorithms by relying on a predic
 More generally, any method that is predefined by the human can easily be transferred to a computational agent by labelling the data in the way the human wants it to be. Essentially telling the agent, "trade like this." But this clearly is limited to the imagination and intellect of its human.
 
 So then the question becomes, how can an artificial system come up with its own trading system where it is unclear to the user what the best strategy is? In this repo we will explore different strategies and attempt to answer this question.
+
+Hopefully, the lessons learned here can be translated to other complex systems where the ideal strategy is unknown.
