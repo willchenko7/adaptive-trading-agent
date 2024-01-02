@@ -72,7 +72,7 @@ if __name__ == "__main__":
     "THETA-USD","XMR-USD","NEO-USD","ETC-USD","AAVE-USD","MKR-USD","ALGO-USD","XTZ-USD","COMP-USD","HBAR-USD","DASH-USD",
     ]
     frequency = "minute"
-    length = 45000
+    length = 55000
     for symbol in symbols:
         # Get the historical data for coin
         try:
