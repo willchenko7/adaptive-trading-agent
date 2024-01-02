@@ -9,6 +9,13 @@ from get_training_data import get_training_data
 import os
 import pandas as pd
 from datetime import datetime, timedelta
+from concurrent.futures import ProcessPoolExecutor
+
+def process_symbol(args):
+    symbol, s_initial_start_time, n_prev, w, b, n_layers = args
+    training_data, current_price = get_training_data(symbol, s_initial_start_time, n_prev)
+    output = forward(training_data, w, b, n_layers)
+    return output, current_price
 
 def sim(w,b,n_layers,input_size,layer_sizes):
     stopwatch = datetime.now()
@@ -21,12 +28,26 @@ def sim(w,b,n_layers,input_size,layer_sizes):
     n_prev = 1000
     symbols = [i.replace('-USD.csv','') for i in os.listdir('data') if i.endswith('.csv') and not i.startswith('tickers')]
     for i in range(0,sim_length):
+        '''
         outputs = []
         for symbol in symbols:
             #print(symbol)
             training_data = get_training_data(symbol, s_initial_start_time, n_prev)
             output = forward(training_data, w, b, n_layers)
             outputs.append(output)
+        '''
+        tasks = [(symbol, s_initial_start_time, n_prev, w, b, n_layers) for symbol in symbols]
+        #parallelize
+        outputs = []
+        current_prices = []
+        with ProcessPoolExecutor() as executor:
+            results = executor.map(process_symbol, tasks)
+            #outputs = list(results)
+            for output, current_price in results:
+                outputs.append(output)
+                current_prices.append(current_price)
+        
+        print(current_prices)
         if current_coin == 'USDC':
             #get best coin to buy (highest output)
             best_coin = symbols[np.argmax(outputs)]
@@ -42,7 +63,7 @@ def sim(w,b,n_layers,input_size,layer_sizes):
                 if outputs[symbols.index(best_coin)] < 0.5:
                     #sell current coin for best coin
                     best_coin = current_coin
-        current_coin, running_total,current_price = transact(best_coin, current_coin, running_total, s_initial_start_time)
+        current_coin, running_total,current_price = transact(best_coin, current_coin, running_total, s_initial_start_time,symbols,current_prices)
         print(f"Current coin: {current_coin}, Running total: {running_total}")
         print(f"start time: {s_initial_start_time}, dollar value: {running_total*current_price}")
         #update start time by adding 10 minutes to previous start time
@@ -55,12 +76,12 @@ def sim(w,b,n_layers,input_size,layer_sizes):
     print(f"Runtime: {runtime}")
     return final_price
 
-def transact(best_coin, current_coin, running_total, s_initial_start_time):
+def transact(best_coin, current_coin, running_total, s_initial_start_time,symbols,current_prices):
     if best_coin == current_coin:
-        current_price = get_current_price(current_coin, s_initial_start_time)
+        current_price = get_current_price(current_coin, s_initial_start_time,symbols,current_prices)
         return current_coin, running_total,current_price
-    best_coin_price = get_current_price(best_coin, s_initial_start_time)
-    current_coin_price = get_current_price(current_coin, s_initial_start_time)
+    best_coin_price = get_current_price(best_coin, s_initial_start_time,symbols,current_prices)
+    current_coin_price = get_current_price(current_coin, s_initial_start_time,symbols,current_prices)
     #multiply running total by current coin price (this will now be in USDC)
     running_total = running_total * current_coin_price
     #multiple running total by .97 (to simulate 3% fee for each trade. gas fees fluctuate, so this is a rough estimate)
@@ -69,9 +90,10 @@ def transact(best_coin, current_coin, running_total, s_initial_start_time):
     running_total = running_total / best_coin_price
     return best_coin, running_total, best_coin_price
 
-def get_current_price(symbol, start_time):
+def get_current_price(symbol, start_time,symbols,current_prices):
     if symbol == 'USDC':
         return 1.0
+    '''
     #read in all data
     df = pd.read_csv(os.path.join('data',f"{symbol}-USD.csv"))
     #convert time to datetime
@@ -84,6 +106,8 @@ def get_current_price(symbol, start_time):
         stop_index = df[df['time'] < start_time].index[0]
     #get current price
     current_price = df.iloc[stop_index]['close']
+    '''
+    current_price = current_prices[symbols.index(symbol)]
     return float(current_price)
 
 if __name__ == "__main__":

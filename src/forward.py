@@ -31,6 +31,9 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 def forward(x, w, b, n_layers):
+    x = x.astype(np.float32)
+    w = [iw.astype(np.float32) for iw in w]
+    b = [ib.astype(np.float32) for ib in b]
     for i in range(n_layers):
         x = np.dot(x, w[i]) + b[i]
         #if i < n_layers - 1:  # Apply sigmoid activation for all layers except the last
@@ -40,6 +43,7 @@ def forward(x, w, b, n_layers):
     return output
 
 if __name__ == "__main__":
+    from datetime import datetime
     x = np.random.rand(2, 1000)
 
     n_layers = 5
@@ -51,5 +55,8 @@ if __name__ == "__main__":
     b = [np.random.rand(size) for size in layer_sizes]
 
     # Get the output
+    stopwatch = datetime.now()
     output = forward(x, w, b, n_layers)
+    runtime = datetime.now() - stopwatch
     print(output)
+    print(f"Runtime: {runtime}")
