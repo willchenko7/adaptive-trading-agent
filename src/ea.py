@@ -1,5 +1,6 @@
 import numpy as np
 from forward import forward, sigmoid
+from sim import sim
 
 def initialize_population(pop_size, layer_sizes):
     population = []
@@ -11,8 +12,12 @@ def initialize_population(pop_size, layer_sizes):
 
 def compute_fitness(solution, x):
     w, b = solution
-    output = forward(x, w, b, n_layers)
-    return output  # Since the goal is to minimize the output
+    #output = forward(x, w, b, n_layers)
+    n_layers = 5
+    input_size = 1000
+    layer_sizes = [500, 200, 100, 50, 1]
+    fitness = sim(w,b,n_layers,input_size,layer_sizes)
+    return fitness*-1  # Since the goal is to minimize the output
 
 def select_parents(population, fitnesses, num_parents):
     parents = list(np.argsort(fitnesses)[:num_parents])
@@ -60,6 +65,8 @@ def ea(n_layers,input_size,layer_sizes,pop_size,num_generations,num_parents,muta
     best_index = np.argmin([compute_fitness(sol, x) for sol in population])
     best_solution = population[best_index]
     print("Best Solution:", best_solution)
+    #save best solution
+    np.save('best_solution.npy',best_solution)
     return
 
 if __name__ == "__main__":
