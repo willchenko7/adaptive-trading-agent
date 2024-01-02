@@ -8,9 +8,14 @@ def get_training_data(symbol,start_time,n):
     #convert time to datetime
     df['time'] = pd.to_datetime(df['time'])
     #get index of start time in time column
-    start_index = df[df['time'] == start_time].index[0]
+    try:
+        stop_index = df[df['time'] == start_time].index[0]
+    except:
+        #get closest time prior to start time
+        stop_index = df[df['time'] < start_time].index[0]
+    start_index = stop_index - n
     #get n rows of data after start time
-    df = df.iloc[start_index-n:start_index+1]
+    df = df.iloc[start_index:stop_index]
     #convert close and volume to numpy arrays
     close = df['close'].to_numpy()
     volume = df['volume'].to_numpy()
@@ -23,5 +28,5 @@ def get_training_data(symbol,start_time,n):
     return training_data
 
 if __name__ == "__main__":
-    training_data = get_training_data("BTC", "2023-11-27 11:46:00", 100)
+    training_data = get_training_data("BTC", "2023-12-27 11:46:00", 100)
     print(training_data)
