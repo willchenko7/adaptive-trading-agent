@@ -5,7 +5,7 @@ goal: given weights, find fitness level
 
 import numpy as np
 from forward import forward, sigmoid
-from get_training_data import get_training_data
+from get_training_data import get_training_data, get_all_training_data
 import os
 import pandas as pd
 from datetime import datetime, timedelta
@@ -110,10 +110,75 @@ def get_current_price(symbol, start_time,symbols,current_prices):
     current_price = current_prices[symbols.index(symbol)]
     return float(current_price)
 
+def get_symbol_data(args):
+    symbol, s_initial_start_time, n_prev, sim_length = args
+    symbol_training_data, symbol_current_prices = get_all_training_data(symbol, s_initial_start_time, n_prev, sim_length)
+    return symbol_training_data, symbol_current_prices
+
+def get_symbol_results(args):
+    all_output = []
+    symbol_training_data, n_prev, w, b, n_layers = args
+    for training_data in symbol_training_data:
+        output = forward(training_data, w, b, n_layers)
+        all_output.append(output)
+    return all_output
+
+
+def acc_sim(w,b,n_layers,input_size,layer_sizes):
+    stopwatch = datetime.now()
+    running_total = 1000
+    current_coin = 'USDC'
+    sim_length = 500
+    s_initial_start_time = "2023-12-27 11:46:00"
+    d_initial_start_time = pd.to_datetime(s_initial_start_time)
+    n_prev = 1000
+    symbols = [i.replace('-USD.csv','') for i in os.listdir('data') if i.endswith('.csv') and not i.startswith('tickers')]
+    tasks = [(symbol, s_initial_start_time, n_prev, sim_length) for symbol in symbols]
+    all_training_data = []
+    all_current_prices = []
+    with ProcessPoolExecutor() as executor:
+        results = executor.map(get_symbol_data, tasks)
+        for training_data, current_price in results:
+            all_training_data.append(training_data)
+            all_current_prices.append(current_price)
+    all_output = []
+    tasks = [(training_data, n_prev, w, b, n_layers) for training_data in all_training_data]
+    with ProcessPoolExecutor() as executor:
+        results = executor.map(get_symbol_results, tasks)
+        for output in results:
+            all_output.append(output)
+    for i in range(0,sim_length):
+        outputs = [output[i] for output in all_output]
+        current_prices = [current_price[i] for current_price in all_current_prices]
+        if current_coin == 'USDC':
+            #get best coin to buy (highest output)
+            best_coin = symbols[np.argmax(outputs)]
+            if outputs[symbols.index(best_coin)] < 0.5:
+                #hold USDC
+                best_coin = 'USDC'
+        else:
+            if outputs[symbols.index(current_coin)] > 0.5:
+                #hold current coin
+                best_coin = current_coin
+            else:
+                best_coin = symbols[np.argmax(outputs)]
+                if outputs[symbols.index(best_coin)] < 0.5:
+                    #sell current coin for best coin
+                    best_coin = current_coin
+        current_coin, running_total,current_price = transact(best_coin, current_coin, running_total, '',symbols,current_prices)
+        print(f"Current coin: {current_coin}, Running total: {running_total}")
+        print(f"i: {i}, dollar value: {running_total*current_price}")
+    final_price = running_total * current_price
+    runtime = datetime.now() - stopwatch
+    runtime = runtime.total_seconds()
+    print(f"Final price: {final_price}")
+    print(f"Runtime: {runtime}")
+    return final_price
+
 if __name__ == "__main__":
     n_layers = 5
     input_size = 1000
     layer_sizes = [500, 200, 100, 50, 1]
     w = [np.random.rand(input_size if i == 0 else layer_sizes[i - 1], size) for i, size in enumerate(layer_sizes)]
     b = [np.random.rand(size) for size in layer_sizes]
-    sim(w,b,n_layers,input_size,layer_sizes)
+    acc_sim(w,b,n_layers,input_size,layer_sizes)
