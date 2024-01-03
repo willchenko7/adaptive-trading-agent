@@ -132,6 +132,7 @@ def acc_sim(w,b,n_layers,input_size,layer_sizes):
     s_initial_start_time = "2023-12-27 11:46:00"
     d_initial_start_time = pd.to_datetime(s_initial_start_time)
     n_prev = 1000
+    sell_mark = 0.1
     symbols = [i.replace('-USD.csv','') for i in os.listdir('data') if i.endswith('.csv') and not i.startswith('tickers')]
     tasks = [(symbol, s_initial_start_time, n_prev, sim_length) for symbol in symbols]
     all_training_data = []
@@ -149,36 +150,43 @@ def acc_sim(w,b,n_layers,input_size,layer_sizes):
             all_output.append(output)
     for i in range(0,sim_length):
         outputs = [output[i] for output in all_output]
+        #normalize outputs to 0-1 (0 for thw lowest output, 1 for the highest)
+        outputs = [(output - min(outputs))/(max(outputs) - min(outputs)) for output in outputs]
+        #outputs = [output/max(outputs) for output in outputs]
+        #normalize outputs to a even distribution between 0 and 1
+        #print(outputs)
         current_prices = [current_price[i] for current_price in all_current_prices]
         if current_coin == 'USDC':
             #get best coin to buy (highest output)
             best_coin = symbols[np.argmax(outputs)]
-            if outputs[symbols.index(best_coin)] < 0.5:
+            if outputs[symbols.index(best_coin)] < sell_mark:
                 #hold USDC
                 best_coin = 'USDC'
         else:
-            if outputs[symbols.index(current_coin)] > 0.5:
+            if outputs[symbols.index(current_coin)] > sell_mark:
                 #hold current coin
                 best_coin = current_coin
             else:
                 best_coin = symbols[np.argmax(outputs)]
-                if outputs[symbols.index(best_coin)] < 0.5:
+                if outputs[symbols.index(best_coin)] < sell_mark:
                     #sell current coin for best coin
                     best_coin = current_coin
         current_coin, running_total,current_price = transact(best_coin, current_coin, running_total, '',symbols,current_prices)
-        print(f"Current coin: {current_coin}, Running total: {running_total}")
-        print(f"i: {i}, dollar value: {running_total*current_price}")
+        #print(f"Current coin: {current_coin}, Running total: {running_total}")
+        #print(f"i: {i}, dollar value: {running_total*current_price}")
     final_price = running_total * current_price
     runtime = datetime.now() - stopwatch
     runtime = runtime.total_seconds()
-    print(f"Final price: {final_price}")
-    print(f"Runtime: {runtime}")
+    #print(f"Final price: {final_price}")
+    #print(f"Runtime: {runtime}")
     return final_price
 
 if __name__ == "__main__":
     n_layers = 5
     input_size = 1000
     layer_sizes = [500, 200, 100, 50, 1]
-    w = [np.random.rand(input_size if i == 0 else layer_sizes[i - 1], size) for i, size in enumerate(layer_sizes)]
-    b = [np.random.rand(size) for size in layer_sizes]
-    acc_sim(w,b,n_layers,input_size,layer_sizes)
+    buffer = 1
+    w = [np.random.rand(input_size if i == 0 else layer_sizes[i - 1], size)*buffer for i, size in enumerate(layer_sizes)]
+    b = [np.random.rand(size)*buffer for size in layer_sizes]
+    final_price = acc_sim(w,b,n_layers,input_size,layer_sizes)
+    #print(final_price)
