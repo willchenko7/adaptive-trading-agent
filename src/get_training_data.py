@@ -26,10 +26,14 @@ def get_training_data(symbol,start_time,n):
     volume = df['volume'].to_numpy()
     current_price = close[-1]
     #normalize close and volume
-    close = close/current_price
-    volume = volume/volume[0]
+    #close = close/max(close)
+    #volume = volume/max(volume)
+    #normalize close between 0 and 1 (0 for the lowest close, 1 for the highest close)
+    close = (close - min(close))/(max(close) - min(close))
+    #normalize volume between 0 and 1 (0 for the lowest volume, 1 for the highest volume)
+    volume = (volume - min(volume))/(max(volume) - min(volume))
     #convert close and volume to single 2 x n array
-    training_data = np.array([close,volume]).astype(np.float32)
+    training_data = np.array([close,volume]).astype(np.float64)
     #return training data
     return training_data, current_price
 
