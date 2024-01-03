@@ -1,12 +1,28 @@
 import numpy as np
 from forward import forward, sigmoid
-from sim import sim
+from sim import acc_sim
+import pickle
+import os
 
-def initialize_population(pop_size, layer_sizes):
+def mutate_initial_pop(solution, mutation_rate=0.01):
+    w, b = solution
+    mutated_w = [w_layer + np.random.randn(*w_layer.shape) * mutation_rate for w_layer in w]
+    mutated_b = [b_layer + np.random.randn(*b_layer.shape) * mutation_rate for b_layer in b]
+    return mutated_w, mutated_b
+
+def initialize_population(pop_size, layer_sizes,from_file=False):
+    if from_file:
+        population = []
+        best_solution = pickle.load(open(os.path.join('models','best_solution.pkl'),'rb'))
+        for _ in range(pop_size):
+            mutated_solution = mutate_initial_pop(best_solution)
+            population.append(mutated_solution)
+        return population
     population = []
+    buffer = 1
     for _ in range(pop_size):
-        w = [np.random.rand(input_size if i == 0 else layer_sizes[i - 1], size) for i, size in enumerate(layer_sizes)]
-        b = [np.random.rand(size) for size in layer_sizes]
+        w = [np.random.rand(input_size if i == 0 else layer_sizes[i - 1], size)*buffer for i, size in enumerate(layer_sizes)]
+        b = [np.random.rand(size)*buffer for size in layer_sizes]
         population.append((w, b))
     return population
 
@@ -16,8 +32,13 @@ def compute_fitness(solution, x):
     n_layers = 5
     input_size = 1000
     layer_sizes = [500, 200, 100, 50, 1]
-    fitness = sim(w,b,n_layers,input_size,layer_sizes)
+    fitness = acc_sim(w,b,n_layers,input_size,layer_sizes)
     return fitness*-1  # Since the goal is to minimize the output
+
+def test_fitness(solution, x):
+    w, b = solution
+    output = forward(x, w, b, n_layers)
+    return output
 
 def select_parents(population, fitnesses, num_parents):
     parents = list(np.argsort(fitnesses)[:num_parents])
@@ -42,6 +63,7 @@ def ea(n_layers,input_size,layer_sizes,pop_size,num_generations,num_parents,muta
     for generation in range(num_generations):
         # Compute fitness for each solution
         fitnesses = [compute_fitness(sol, x) for sol in population]
+        #fitnesses = [test_fitness(sol, x) for sol in population]
 
         # Select parents
         parents = select_parents(population, fitnesses, num_parents)
@@ -62,22 +84,25 @@ def ea(n_layers,input_size,layer_sizes,pop_size,num_generations,num_parents,muta
         print(f"Generation {generation}: Best Fitness = {np.min(fitnesses)}")
 
     # Best solution
-    best_index = np.argmin([compute_fitness(sol, x) for sol in population])
+    best_index = np.argmin(fitnesses)
     best_solution = population[best_index]
     print("Best Solution:", best_solution)
-    #save best solution
-    np.save('best_solution.npy',best_solution)
+    print("Best Fitness:", fitnesses[best_index])
+    #np.save('best_solution.npy',best_solution)
+    #save best solution as pickle
+    pickle.dump(best_solution, open(os.path.join('models','best_solution.pkl'),'wb'))
     return
 
 if __name__ == "__main__":
     # Parameters
-    n_layers = 5
+    #n_layers = 5
     input_size = 1000
-    layer_sizes = [500, 200, 100, 50, 1]
-    pop_size = 50  # Population size
-    num_generations = 1000  # Number of generations
+    layer_sizes = [1000, 500, 200, 100, 50, 1]
+    n_layers = len(layer_sizes)
+    pop_size = 10  # Population size
+    num_generations = 10  # Number of generations
     num_parents = 10  # Number of parents for crossover
-    mutation_rate = 0.01  # Mutation rate
+    mutation_rate = 0.00001  # Mutation rate
     x = np.random.rand(2, 1000)  # Input data
     #normalizing input data
     x = (x - np.mean(x)) / np.std(x)
