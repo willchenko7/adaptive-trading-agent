@@ -4,7 +4,7 @@ goal: given weights, find fitness level
 '''
 
 import numpy as np
-from forward import forward, sigmoid
+from forward import forward, sigmoid, forward_with_attention
 from get_training_data import get_training_data, get_all_training_data
 import os
 import pandas as pd
@@ -117,19 +117,20 @@ def get_symbol_data(args):
 
 def get_symbol_results(args):
     all_output = []
-    symbol_training_data, n_prev, w, b, n_layers = args
+    symbol_training_data, n_prev, w, b, n_layers,attn_weights, attn_query, attn_keys, attn_values = args
     for training_data in symbol_training_data:
-        output = forward(training_data, w, b, n_layers)
+        #output = forward(training_data, w, b, n_layers)
+        output = forward_with_attention(training_data, w, b, n_layers, attn_weights, attn_query, attn_keys, attn_values)
         all_output.append(output)
     return all_output
 
 
-def acc_sim(w,b,n_layers,input_size,layer_sizes):
+def acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values,s_initial_start_time="2023-12-27 11:46:00"):
     stopwatch = datetime.now()
     running_total = 1000
     current_coin = 'USDC'
     sim_length = 500
-    s_initial_start_time = "2023-12-27 11:46:00"
+    #s_initial_start_time = "2023-12-27 11:46:00"
     d_initial_start_time = pd.to_datetime(s_initial_start_time)
     n_prev = 1000
     sell_mark = 0.1
@@ -143,7 +144,7 @@ def acc_sim(w,b,n_layers,input_size,layer_sizes):
             all_training_data.append(training_data)
             all_current_prices.append(current_price)
     all_output = []
-    tasks = [(training_data, n_prev, w, b, n_layers) for training_data in all_training_data]
+    tasks = [(training_data, n_prev, w, b, n_layers,attn_weights, attn_query, attn_keys, attn_values) for training_data in all_training_data]
     with ProcessPoolExecutor() as executor:
         results = executor.map(get_symbol_results, tasks)
         for output in results:
@@ -177,7 +178,7 @@ def acc_sim(w,b,n_layers,input_size,layer_sizes):
     final_price = running_total * current_price
     runtime = datetime.now() - stopwatch
     runtime = runtime.total_seconds()
-    #print(f"Final price: {final_price}")
+    print(f"Final price: {final_price}")
     #print(f"Runtime: {runtime}")
     return final_price
 
@@ -188,5 +189,13 @@ if __name__ == "__main__":
     buffer = 1
     w = [np.random.rand(input_size if i == 0 else layer_sizes[i - 1], size)*buffer for i, size in enumerate(layer_sizes)]
     b = [np.random.rand(size)*buffer for size in layer_sizes]
-    final_price = acc_sim(w,b,n_layers,input_size,layer_sizes)
+    attention_layer_index = 0 
+    layer_output_dim = layer_sizes[attention_layer_index]
+    attn_dim = layer_output_dim 
+    attn_query = np.random.rand(attn_dim).astype(np.float64)
+    attn_keys = np.random.rand(attn_dim, attn_dim).astype(np.float64)
+    attn_values = np.random.rand(attn_dim, attn_dim).astype(np.float64)
+    attn_weights = np.random.rand(attn_dim).astype(np.float64)
+
+    final_price = acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values)
     #print(final_price)

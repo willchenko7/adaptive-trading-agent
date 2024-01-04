@@ -60,7 +60,8 @@ def get_all_training_data(symbol, start_time, n, sim_length):
         close = close/current_price
         volume = volume/volume[-1]
         #convert close and volume to single 2 x n array
-        training_data = np.array([close,volume])
+        #training_data = np.array([close,volume])
+        training_data = np.array(close)
         all_training_data.append(training_data)
         current_prices.append(current_price)
         d_start_time = d_start_time + timedelta(minutes=10)
