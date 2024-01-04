@@ -33,13 +33,12 @@ def initialize_population(pop_size, layer_sizes,from_file=False):
         population.append((w, b, attn_weights, attn_query, attn_keys, attn_values))
     return population
 
-def compute_fitness(solution, x):
+def compute_fitness(solution, start_time):
     w, b, attn_weights, attn_query, attn_keys, attn_values = solution
-    #output = forward(x, w, b, n_layers)
     n_layers = 5
     input_size = 1000
     layer_sizes = [500, 200, 100, 50, 1]
-    fitness = acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values)
+    fitness = acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values, start_time)
     return fitness*-1  # Since the goal is to minimize the output
 
 def test_fitness(solution, x):
@@ -70,14 +69,14 @@ def mutate(solution, mutation_rate):
     mutated_attn_values = attn_values + np.random.randn(*attn_values.shape) * mutation_rate
     return mutated_w, mutated_b, mutated_attn_weights, mutated_attn_query, mutated_attn_keys, mutated_attn_values
 
-def ea(n_layers,input_size,layer_sizes,pop_size,num_generations,num_parents,mutation_rate,x):
+def ea(n_layers,input_size,layer_sizes,pop_size,num_generations,num_parents,mutation_rate,x,start_time):
     # Initialize population
     population = initialize_population(pop_size, layer_sizes)
 
     # Evolution
     for generation in range(num_generations):
         # Compute fitness for each solution
-        fitnesses = [compute_fitness(sol, x) for sol in population]
+        fitnesses = [compute_fitness(sol, start_time) for sol in population]
         #fitnesses = [test_fitness(sol, x) for sol in population]
 
         # Select parents
@@ -105,7 +104,7 @@ def ea(n_layers,input_size,layer_sizes,pop_size,num_generations,num_parents,muta
     print("Best Fitness:", fitnesses[best_index])
     #np.save('best_solution.npy',best_solution)
     #save best solution as pickle
-    pickle.dump(best_solution, open(os.path.join('models','best_solution.pkl'),'wb'))
+    pickle.dump(best_solution, open(os.path.join('models',f'best_solution_{start_time}.pkl'),'wb'))
     return
 
 if __name__ == "__main__":
@@ -121,5 +120,6 @@ if __name__ == "__main__":
     x = np.random.rand(1000)  # Input data
     #normalizing input data
     x = (x - np.mean(x)) / np.std(x)
-    start_time =  = "2023-12-27 11:46:00"
+    start_times = ["2023-11-27 11:46:00","2023-12-01 11:46:00","2023-12-05 11:46:00","2023-12-09 11:46:00"]
+    start_time = start_times[0]
     ea(n_layers,input_size,layer_sizes,pop_size,num_generations,num_parents,mutation_rate,x,start_time)
