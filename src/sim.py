@@ -74,7 +74,14 @@ def sim(w,b,n_layers,input_size,layer_sizes):
     runtime = runtime.total_seconds()
     print(f"Final price: {final_price}")
     print(f"Runtime: {runtime}")
-    return final_price
+    #indicate potential next steps to user
+    #1. what is current status of current coin? (hold, buy, sell)
+    next_thoughts = []
+    next_thoughts.append(f"Current coin: {current_coin}")
+    #2. what is the best coin to buy next?
+    best_coin = symbols[np.argmax(outputs)]
+    next_thoughts.append(f"Best coin to buy next: {best_coin}")
+    return final_price , ";" .join(next_thoughts)
 
 def transact(best_coin, current_coin, running_total, s_initial_start_time,symbols,current_prices):
     if best_coin == current_coin:
@@ -173,14 +180,21 @@ def acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_k
                     #sell current coin for best coin
                     best_coin = current_coin
         current_coin, running_total,current_price = transact(best_coin, current_coin, running_total, '',symbols,current_prices)
-        #print(f"Current coin: {current_coin}, Running total: {running_total}")
-        #print(f"i: {i}, dollar value: {running_total*current_price}")
+        print(f"Current coin: {current_coin}, Running total: {running_total}")
+        print(f"i: {i}, dollar value: {running_total*current_price}")
     final_price = running_total * current_price
     runtime = datetime.now() - stopwatch
     runtime = runtime.total_seconds()
     print(f"Final price: {final_price}")
     #print(f"Runtime: {runtime}")
-    return final_price
+    #indicate potential next steps to user
+    #1. what is current status of current coin? (hold, buy, sell)
+    next_thoughts = []
+    next_thoughts.append(f"Current coin: {current_coin}")
+    #2. what is the best coin to buy next?
+    best_coin = symbols[np.argmax(outputs)]
+    next_thoughts.append(f"Best coin to buy next: {best_coin}")
+    return final_price, ";" .join(next_thoughts)
 
 if __name__ == "__main__":
     n_layers = 5
@@ -197,5 +211,5 @@ if __name__ == "__main__":
     attn_values = np.random.rand(attn_dim, attn_dim).astype(np.float64)
     attn_weights = np.random.rand(attn_dim).astype(np.float64)
 
-    final_price = acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values)
+    final_price, next_thoughts = acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values)
     #print(final_price)

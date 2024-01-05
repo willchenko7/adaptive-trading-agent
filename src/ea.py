@@ -40,7 +40,7 @@ def compute_fitness(solution, start_times):
     layer_sizes = [500, 200, 100, 50, 1]
     fitnesses = []
     for start_time in start_times:
-        fitness = acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values, start_time)
+        fitness, next_thoughts = acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values, start_time)
         fitnesses.append(fitness)
     fitness = np.mean(fitnesses)
     print(f"Final Fitness: {fitness}")

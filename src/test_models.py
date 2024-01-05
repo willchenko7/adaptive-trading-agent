@@ -9,14 +9,16 @@ layer_sizes = [500, 200, 100, 50, 1]
 n_layers = len(layer_sizes)
 
 start_times = ["2023-11-27 11:46:00","2023-12-01 11:46:00","2023-12-05 11:46:00","2023-12-09 11:46:00"]
-models = [f for f in os.listdir('models') if f.endswith('.pkl')]
+models = [f for f in os.listdir('models') if f.endswith('.pkl') and not f.startswith('best_model')]
 
 all_model_results = []
 for model in models:
+    print(f"Testing model: {model}")
     model_results = []
     for start_time in start_times:
         w, b, attn_weights, attn_query, attn_keys, attn_values = pickle.load(open(os.path.join('models',model),'rb'))
-        model_results.append(acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values,start_time))
+        fitness, next_thoughts = acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values,start_time)
+        model_results.append(fitness)
     all_model_results.append(model_results)
 
 #select model with best results
