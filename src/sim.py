@@ -123,12 +123,12 @@ def sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys,
                     #sell current coin for best coin
                     best_coin = current_coin
         current_coin, running_total,current_price = transact(best_coin, current_coin, running_total, '',symbols,current_prices)
-        print(f"Current coin: {current_coin}, Running total: {running_total}")
-        print(f"i: {i}, dollar value: {running_total*current_price}")
+        #print(f"Current coin: {current_coin}, Running total: {running_total}")
+        #print(f"i: {i}, dollar value: {running_total*current_price}")
     final_price = running_total * current_price
     runtime = datetime.now() - stopwatch
     runtime = runtime.total_seconds()
-    print(f"Final price: {final_price}")
+    #print(f"Final price: {final_price}")
     #print(f"Runtime: {runtime}")
     #indicate potential next steps to user
     #1. what is current status of current coin? (hold, buy, sell)
