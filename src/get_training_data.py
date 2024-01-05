@@ -40,16 +40,16 @@ def get_training_data(symbol,start_time,n):
 def get_all_training_data(symbol, start_time, n, sim_length):
     all_training_data = []
     current_prices = []
-    #df = pd.read_csv(os.path.join('data',f"{symbol}-USD.csv"),usecols=['time','close','volume'])
-    df = pd.read_parquet(os.path.join('data', f"{symbol}-USD.parquet"))
+    df = pd.read_csv(os.path.join('data',f"{symbol}-USD.csv"),usecols=['time','close','volume'])
+    #df = pd.read_parquet(os.path.join('data', f"{symbol}-USD.parquet"))
     d_start_time = pd.to_datetime(start_time)
     for i in range(sim_length):
         try:
-            stop_index = df[df['time'] == start_time].index[0]
+            start_index = df[df['time'] == start_time].index[0]
         except:
             #get closest time prior to start time
-            stop_index = df[df['time'] < start_time].index[0]
-        start_index = stop_index - n
+            start_index = df[df['time'] < start_time].index[0]
+        stop_index = start_index + n
         #get n rows of data after start time
         df_slice = df.iloc[start_index:stop_index]
         #convert close and volume to numpy arrays
