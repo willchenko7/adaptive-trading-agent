@@ -1,89 +1,38 @@
-
-'''
-goal: given weights, find fitness level
-'''
-
 import numpy as np
-from forward import forward, sigmoid, forward_with_attention
-from get_training_data import get_training_data, get_all_training_data
+from forward import forward_with_attention
+from get_training_data import get_all_training_data
 import os
 import pandas as pd
 from datetime import datetime, timedelta
 from concurrent.futures import ProcessPoolExecutor
 
-def process_symbol(args):
-    symbol, s_initial_start_time, n_prev, w, b, n_layers = args
-    training_data, current_price = get_training_data(symbol, s_initial_start_time, n_prev)
-    output = forward(training_data, w, b, n_layers)
-    return output, current_price
+'''
+goal: simulate trading based on model
+- simulation will start at a given time and run for a given length of time (sim_length)
 
-def sim(w,b,n_layers,input_size,layer_sizes):
-    stopwatch = datetime.now()
-    running_total = 1000
-    current_coin = 'USDC'
-    sim_length = 500
-    s_initial_start_time = "2023-12-27 11:46:00"
-    #convert start time to datetime object
-    d_initial_start_time = pd.to_datetime(s_initial_start_time)
-    n_prev = 1000
-    symbols = [i.replace('-USD.csv','') for i in os.listdir('data') if i.endswith('.csv') and not i.startswith('tickers')]
-    for i in range(0,sim_length):
-        '''
-        outputs = []
-        for symbol in symbols:
-            #print(symbol)
-            training_data = get_training_data(symbol, s_initial_start_time, n_prev)
-            output = forward(training_data, w, b, n_layers)
-            outputs.append(output)
-        '''
-        tasks = [(symbol, s_initial_start_time, n_prev, w, b, n_layers) for symbol in symbols]
-        #parallelize
-        outputs = []
-        current_prices = []
-        with ProcessPoolExecutor() as executor:
-            results = executor.map(process_symbol, tasks)
-            #outputs = list(results)
-            for output, current_price in results:
-                outputs.append(output)
-                current_prices.append(current_price)
-        
-        print(current_prices)
-        if current_coin == 'USDC':
-            #get best coin to buy (highest output)
-            best_coin = symbols[np.argmax(outputs)]
-            if outputs[symbols.index(best_coin)] < 0.5:
-                #hold USDC
-                best_coin = 'USDC'
-        else:
-            if outputs[symbols.index(current_coin)] > 0.5:
-                #hold current coin
-                best_coin = current_coin
-            else:
-                best_coin = symbols[np.argmax(outputs)]
-                if outputs[symbols.index(best_coin)] < 0.5:
-                    #sell current coin for best coin
-                    best_coin = current_coin
-        current_coin, running_total,current_price = transact(best_coin, current_coin, running_total, s_initial_start_time,symbols,current_prices)
-        print(f"Current coin: {current_coin}, Running total: {running_total}")
-        print(f"start time: {s_initial_start_time}, dollar value: {running_total*current_price}")
-        #update start time by adding 10 minutes to previous start time
-        d_initial_start_time = d_initial_start_time + timedelta(minutes=10)
-        s_initial_start_time = d_initial_start_time.strftime("%Y-%m-%d %H:%M:%S")
-    final_price = running_total * current_price
-    runtime = datetime.now() - stopwatch
-    runtime = runtime.total_seconds()
-    print(f"Final price: {final_price}")
-    print(f"Runtime: {runtime}")
-    #indicate potential next steps to user
-    #1. what is current status of current coin? (hold, buy, sell)
-    next_thoughts = []
-    next_thoughts.append(f"Current coin: {current_coin}")
-    #2. what is the best coin to buy next?
-    best_coin = symbols[np.argmax(outputs)]
-    next_thoughts.append(f"Best coin to buy next: {best_coin}")
-    return final_price , ";" .join(next_thoughts)
+input:
+- w: weights
+- b: biases
+- n_layers: int representing number of layers
+- input_size: int representing input size
+- layer_sizes: list of ints representing layer sizes
+- attn_weights: attention weights
+- attn_query: attention query
+- attn_keys: attention keys
+- attn_values: attention values
+- s_initial_start_time: string representing start time
+- sim_length: int representing number of minutes to simulate
+
+output:
+- final_price: float representing final price
+- next_thoughts: string representing next thoughts
+
+'''
 
 def transact(best_coin, current_coin, running_total, s_initial_start_time,symbols,current_prices):
+    '''
+    goal: simulate a transaction
+    '''
     if best_coin == current_coin:
         current_price = get_current_price(current_coin, s_initial_start_time,symbols,current_prices)
         return current_coin, running_total,current_price
@@ -98,46 +47,40 @@ def transact(best_coin, current_coin, running_total, s_initial_start_time,symbol
     return best_coin, running_total, best_coin_price
 
 def get_current_price(symbol, start_time,symbols,current_prices):
+    '''
+    goal: get current price of symbol
+    '''
     if symbol == 'USDC':
         return 1.0
-    '''
-    #read in all data
-    df = pd.read_csv(os.path.join('data',f"{symbol}-USD.csv"))
-    #convert time to datetime
-    df['time'] = pd.to_datetime(df['time'])
-    #get index of start time in time column
-    try:
-        stop_index = df[df['time'] == start_time].index[0]
-    except:
-        #get closest time prior to start time
-        stop_index = df[df['time'] < start_time].index[0]
-    #get current price
-    current_price = df.iloc[stop_index]['close']
-    '''
     current_price = current_prices[symbols.index(symbol)]
     return float(current_price)
 
 def get_symbol_data(args):
+    '''
+    wrapper function for get_all_training_data to allow for multiprocessing
+    '''
     symbol, s_initial_start_time, n_prev, sim_length = args
     symbol_training_data, symbol_current_prices = get_all_training_data(symbol, s_initial_start_time, n_prev, sim_length)
     return symbol_training_data, symbol_current_prices
 
 def get_symbol_results(args):
+    '''
+    wrapper function for forward_with_attention to allow for multiprocessing
+    -runs forward_with_attention on each symbol's training data for each iteration of the simulation
+    '''
     all_output = []
     symbol_training_data, n_prev, w, b, n_layers,attn_weights, attn_query, attn_keys, attn_values = args
     for training_data in symbol_training_data:
-        #output = forward(training_data, w, b, n_layers)
         output = forward_with_attention(training_data, w, b, n_layers, attn_weights, attn_query, attn_keys, attn_values)
         all_output.append(output)
     return all_output
 
 
-def acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values,s_initial_start_time="2023-12-27 11:46:00"):
+def sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values,s_initial_start_time="2023-12-27 11:46:00"):
     stopwatch = datetime.now()
     running_total = 1000
     current_coin = 'USDC'
     sim_length = 500
-    #s_initial_start_time = "2023-12-27 11:46:00"
     d_initial_start_time = pd.to_datetime(s_initial_start_time)
     n_prev = 1000
     sell_mark = 0.1
@@ -211,5 +154,5 @@ if __name__ == "__main__":
     attn_values = np.random.rand(attn_dim, attn_dim).astype(np.float64)
     attn_weights = np.random.rand(attn_dim).astype(np.float64)
 
-    final_price, next_thoughts = acc_sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values)
+    final_price, next_thoughts = sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values)
     #print(final_price)

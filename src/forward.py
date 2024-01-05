@@ -1,31 +1,11 @@
-'''
 import numpy as np
 
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-
-def forward(x,w,b,n_layers):
-    for i in range(n_layers):
-        x = np.dot(x,w[i]) + b[i]
-    y = np.sum(x)
-    output = sigmoid(y)
-    return output
-
-if __name__ == "__main__":
-    x = np.random.rand(2, 1000)
-
-    n_layers = 2  # Number of layers; adjust as needed
-    layer_sizes = [1]  # Size of each layer; for a single layer, it's just 1
-
-    # Initialize weights and biases
-    w = [np.random.rand(1000, layer_sizes[0]) for _ in range(n_layers)]  # Adjust dimensions as per layer_sizes
-    b = [np.random.rand(layer_sizes[0]) for _ in range(n_layers)]
-
-    # Get the output
-    output = forward(x, w, b, n_layers)
-    print(output)
 '''
-import numpy as np
+goal: forward pass through neural network
+- two options: forward pass with attention and forward pass without attention
+'''
+
+#different activation functions
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -40,25 +20,19 @@ def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum(axis=0)
 
+#forward pass without attention
 def forward(x, w, b, n_layers):
     buffer = 1
     x = x.astype(np.float64)
     w = [iw.astype(np.float64) for iw in w]
     b = [ib.astype(np.float64) for ib in b]
-    #print(x)
-    #print(w)
-    #print(b)
     for i in range(n_layers):
         x = np.dot(x, w[i]*buffer) + b[i]*buffer
-        #print(x)
-        #if i < n_layers - 1:  # Apply sigmoid activation for all layers except the last
-        #x = sigmoid(x)
-        #print(x)
-        #a = 1 + '1'
     y = np.sum(x)/1e10
-    #print(y)
     y = sigmoid(y)
     return y
+
+#forward pass with attention
 
 def attention(weights, query, keys, values):
     # Simple dot-product attention
