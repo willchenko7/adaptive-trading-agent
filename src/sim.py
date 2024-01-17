@@ -137,7 +137,10 @@ def sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys,
     #2. what is the best coin to buy next?
     best_coin = symbols[np.argmax(outputs)]
     next_thoughts.append(f"Best coin to buy next: {best_coin}")
-    return final_price, ";" .join(next_thoughts)
+    #3. get all symbols that are currently below sell_mark
+    below_sell_mark = [symbol for symbol, output in zip(symbols, outputs) if output < sell_mark]
+    next_thoughts.append(f"Symbols below sell mark: {below_sell_mark}")
+    return final_price, ";" .join(next_thoughts), outputs, symbols, current_prices
 
 if __name__ == "__main__":
     n_layers = 5
