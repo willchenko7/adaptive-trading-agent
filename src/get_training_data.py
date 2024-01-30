@@ -39,10 +39,10 @@ def get_all_training_data(symbol, start_time, n, sim_length):
         #convert close and volume to numpy arrays
         close = df_slice['close'].to_numpy()
         volume = df_slice['volume'].to_numpy()
-        current_price = close[-1]
+        current_price = close[0]
         #normalize close and volume
         close = close/current_price
-        volume = volume/volume[-1]
+        volume = volume/volume[0]
         #convert to numpy array
         training_data = np.array(close)
         #add to all data
