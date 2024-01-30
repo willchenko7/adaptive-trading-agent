@@ -153,6 +153,15 @@ if __name__ == "__main__":
     num_generations = 10
     num_parents = 10
     mutation_rate = 3.0
-    start_times = ["2023-11-27 11:46:00","2023-12-01 11:46:00","2023-12-05 11:46:00","2023-12-09 11:46:00"]
-    model_name = "1127-1209"
-    ea(input_size,layer_sizes,pop_size,num_generations,num_parents,mutation_rate,start_times,model_name)
+    #start_times = ["2023-11-27 11:46:00","2023-12-01 11:46:00","2023-12-05 11:46:00","2023-12-09 11:46:00"]
+    months = ["9","10","11","12"]
+    days = ["01","05","09","13","17","21","25","29"]
+    #days = ["01","05","09","13"]
+    hours = ["12:00:00"]
+    for month in months:
+        for day in days:
+            for hour in hours:
+                print(f"Running EA for {month}/{day}")
+                start_times = [f"2023-{month}-{day} {hour}"]
+                model_name = f"{month}_{day}"
+                ea(input_size,layer_sizes,pop_size,num_generations,num_parents,mutation_rate,start_times,model_name)

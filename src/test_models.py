@@ -29,6 +29,8 @@ def test_models(input_size, layer_sizes, n_layers, start_times):
         for start_time in start_times:
             w, b, attn_weights, attn_query, attn_keys, attn_values = pickle.load(open(os.path.join('models',model),'rb'))
             fitness, next_thoughts = sim(w,b,n_layers,input_size,layer_sizes,attn_weights, attn_query, attn_keys, attn_values,start_time)
+
+            print(f'Start time: {start_time} , fitness: {fitness}')
             model_results.append(fitness)
         all_model_results.append(model_results)
     #select model with best results
@@ -45,5 +47,17 @@ if __name__ == "__main__":
     input_size = 1000
     layer_sizes = [500, 200, 100, 50, 1]
     n_layers = len(layer_sizes)
-    start_times = ["2023-11-27 11:46:00","2023-12-01 11:46:00","2023-12-05 11:46:00","2023-12-09 11:46:00"]
+    #start_times = ["2023-11-27 11:46:00","2023-12-01 11:46:00","2023-12-05 11:46:00","2023-12-09 11:46:00"]
+    #best_model = test_models(input_size, layer_sizes, n_layers, start_times)
+    months = ["9","10","11","12"]
+    days = ["01","05","09","13","17","21","25","29"]
+    #days = ["01","05","09","13"]
+    hours = ["12:00:00"]
+    start_times = []
+    for month in months:
+        for day in days:
+            for hour in hours:
+                #print(f"Running EA for {month}/{day}")
+                start_time = f"2023-{month}-{day} {hour}"
+                start_times.append(start_time)
     best_model = test_models(input_size, layer_sizes, n_layers, start_times)

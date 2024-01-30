@@ -42,6 +42,7 @@ def get_historical_data(symbol, frequency, length):
     # Loop through the API results until we have retrieved the desired length of data
     while len(data) < length:
         # Make the API request
+        #print(len(data))
         response = requests.get(endpoint, params=params)
 
         # Check if the request was successful
@@ -71,8 +72,9 @@ if __name__ == "__main__":
     "ADA-USD","DOT-USD","LINK-USD","UNI-USD","LUNA-USD","ATOM-USD","FIL-USD","TRX-USD","XLM-USD","VET-USD","EOS-USD",
     "THETA-USD","XMR-USD","NEO-USD","ETC-USD","AAVE-USD","MKR-USD","ALGO-USD","XTZ-USD","COMP-USD","HBAR-USD","DASH-USD",
     ]
+    symbols = symbols[7:]
     frequency = "minute"
-    length = 55000
+    length = 200000
     for symbol in symbols:
         # Get the historical data for coin
         try:
