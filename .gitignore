@@ -2,3 +2,5 @@ venv
 src/__pycache__
 __pycache__
 archive_models
+archive_data
+
